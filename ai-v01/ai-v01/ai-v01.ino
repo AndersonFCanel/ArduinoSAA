@@ -44,6 +44,9 @@ void loop() {
 
   boolean  contSeco = temAgua();
   boolean n0 = checaN0();
+  boolean n1 = checaN1();
+  boolean n2 = checaN2();
+  boolean n3 = checaN3();
 
   //CHECAR NÍVEL 0
   if (contSeco ) {
@@ -51,7 +54,37 @@ void loop() {
     if (n0) {
       Serial.println( "trueN0");
       rotinaN0Levantado();
-      desligaBomba();
+
+      //CHECAR NÍVEL 1
+      if (n1) {
+        Serial.println( "trueN1");
+        rotinaN1Levantado();
+        //CHECAR NÍVEL 2
+        if (n2) {
+          Serial.println( "trueN2");
+          rotinaN2Levantado();
+          //CHECAR NÍVEL 3
+          if (n3) {
+            Serial.println( "trueN3");
+            rotinaN3Levantado();
+            desligaBomba();
+          } else {
+            rotinaN3Abaixado();
+            ligaBomba();
+          }
+
+          //desligaBomba();
+        } else {
+          rotinaN2Abaixado();
+          ligaBomba();
+        }
+
+        //desligaBomba();
+      } else {
+        rotinaN1Abaixado();
+        ligaBomba();
+      }
+      //desligaBomba();
     } else {
       Serial.println( "falseN0");
       rotinaN0Abaixado();
@@ -60,7 +93,7 @@ void loop() {
   }
 
   //Se circuito CS ABERTO então...(SECO NO CANO)
-  else{
+  else {
     //configurar um delay de 5 minutos
     delay(1000);
     desligaBomba();
@@ -113,6 +146,19 @@ void desligaBomba () {
   //***********************************
 }
 
+void desligaTudo() {
+  //liga o led vermelho
+  digitalWrite(ledVermelho, HIGH);
+  digitalWrite(pinRele, HIGH);
+  digitalWrite(ledAzul, HIGH);
+  digitalWrite(ledVerde, HIGH);
+  digitalWrite(ledAmarelo, HIGH);
+}
+
+
+/*
+   Metodos nivel 0
+*/
 //se boia abaixada false
 boolean checaN0() {
   //Boia Abaixada
@@ -154,12 +200,126 @@ void rotinaN0Levantado() {
   digitalWrite(ledAmarelo, HIGH);
 }
 
+/*
+   Metodos nivel 1
+*/
+//se boia abaixada false
+boolean checaN1() {
+  //Boia Abaixada
+  if (digitalRead(nivel1) == LOW) {
+    Serial.println("N-1 LOW Boia A: "  );
+    //***********************************
+    //Envia hora e estado nivel 1 para WS
+    //***********************************
+    return false;
+    //Boia Levantada
+  } else if (digitalRead(nivel1) == HIGH) {
+    Serial.println("N-1 HIGH Boia L: " );
+    //***********************************
+    //Envia hora e estado nivel 1 para WS
+    //***********************************
+    return true;
+  }
 
-void desligaTudo() {
-  //liga o led vermelho
-  digitalWrite(ledVermelho, HIGH);
-  digitalWrite(pinRele, HIGH);
+}
+
+
+//
+void rotinaN1Abaixado() {
+  //desliga o led vermelho
+  //digitalWrite(ledVermelho, LOW);
   digitalWrite(ledAzul, HIGH);
   digitalWrite(ledVerde, HIGH);
   digitalWrite(ledAmarelo, HIGH);
+}
+
+
+void rotinaN1Levantado() {
+  //liga o led vermelho
+  //digitalWrite(ledVermelho, LOW);
+  digitalWrite(ledAzul, LOW);
+  digitalWrite(ledVerde, HIGH);
+  digitalWrite(ledAmarelo, HIGH);
+}
+
+
+/*
+    Metodos nivel 2
+*/
+//se boia abaixada false
+boolean checaN2() {
+  //Boia Abaixada
+  if (digitalRead(nivel2) == LOW) {
+    Serial.println("N-2 LOW Boia A: "  );
+    //***********************************
+    //Envia hora e estado nivel 2 para WS
+    //***********************************
+    return false;
+    //Boia Levantada
+  } else if (digitalRead(nivel2) == HIGH) {
+    Serial.println("N-2 HIGH Boia L: " );
+    //***********************************
+    //Envia hora e estado nivel 2 para WS
+    //***********************************
+    return true;
+  }
+
+}
+
+void rotinaN2Abaixado() {
+  //desliga o led vermelho
+  //digitalWrite(ledVermelho, LOW);
+  //digitalWrite(ledAzul, HIGH);
+  digitalWrite(ledVerde, HIGH);
+  digitalWrite(ledAmarelo, HIGH);
+}
+
+
+void rotinaN2Levantado() {
+  //liga o led vermelho
+  //digitalWrite(ledVermelho, LOW);
+  //(ledAzul, LOW);
+  digitalWrite(ledVerde, LOW);
+  digitalWrite(ledAmarelo, HIGH);
+}
+
+
+/*
+   Metodos nivel 3
+*/
+//se boia abaixada false
+boolean checaN3() {
+  //Boia Abaixada
+  if (digitalRead(nivel3) == LOW) {
+    Serial.println("N-3 LOW Boia A: "  );
+    //***********************************
+    //Envia hora e estado nivel 3 para WS
+    //***********************************
+    return false;
+    //Boia Levantada
+  } else if (digitalRead(nivel3) == HIGH) {
+    Serial.println("N-3 HIGH Boia L: " );
+    //***********************************
+    //Envia hora e estado nivel 3 para WS
+    //***********************************
+    return true;
+  }
+
+}
+
+void rotinaN3Abaixado() {
+  //desliga o led vermelho
+  //digitalWrite(ledVermelho, LOW);
+  //digitalWrite(ledAzul, HIGH);
+  //digitalWrite(ledVerde, HIGH);
+  digitalWrite(ledAmarelo, HIGH);
+}
+
+
+void rotinaN3Levantado() {
+  //liga o led vermelho
+  //digitalWrite(ledVermelho, LOW);
+  //(ledAzul, LOW);
+  //digitalWrite(ledVerde, LOW);
+  digitalWrite(ledAmarelo, LOW);
 }
