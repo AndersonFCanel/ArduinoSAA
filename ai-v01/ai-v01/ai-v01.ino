@@ -19,8 +19,10 @@
 #define pinContraSeco 3
 
 /*Global set nivel*/
-int NIVEL_MINIMO_PARA_ACIONAMENTO;
-int NIVEL_ATUAL;
+int Nivel_Minimo_Para_Acionamento;
+int Nivel_Atual = 0;
+int NIVEL_MAXIMO = 3;
+boolean isCheio = false;
 
 //variavel que contem todos os pinos usados para pinMode
 int pinosUsados[10] = {ledVerde, ledAmarelo, ledAzul, ledVermelho, nivel0, nivel1, nivel2, nivel3, pinRele, pinContraSeco};
@@ -36,14 +38,12 @@ void setup()
     pinMode(pinosUsados[i], tipoPinos[i]);
   }
   desligaTudo();
-  NIVEL_MINIMO_PARA_ACIONAMENTO = NivelDeAcionamentoMinimo(1);
+  Nivel_Minimo_Para_Acionamento = NivelDeAcionamentoMinimo(1);
 }
 
 void loop() {
   //Toda a lógica de funcionamento deve ocorrer no interior desse if
   //Se circuito CS FECHADO então...(ÁGUA NO CANO)
-
-  NIVEL_ATUAL =  checaNIVEL_ATUAL();
 
   boolean  contSeco = temAgua();
   boolean n0 = checaN0();
@@ -52,24 +52,27 @@ void loop() {
   boolean n3 = checaN3();
 
   //CHECAR NÍVEL 0
-  if (contSeco && NIVEL_ATUAL >= NIVEL_MINIMO_PARA_ACIONAMENTO) {
+  if (contSeco ) {
     // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
-    if (n0) {
-      Serial.println( "trueN0");
+    if (n0 ) {
+      Serial.println( "NIVEL-0");
       rotinaN0Levantado();
-
+      defineNivel_Atual(0);
       //CHECAR NÍVEL 1
-      if (n1 && n0) {
-        Serial.println( "trueN1");
+      if (n1 && n0 ) {
+        Serial.println( "NIVEL-1");
         rotinaN1Levantado();
+        defineNivel_Atual(1);
         //CHECAR NÍVEL 2
-        if (n2 && n1 && n0) {
-          Serial.println( "trueN2");
+        if (n2 && n1 && n0 ) {
+          Serial.println( "NIVEL-N2");
           rotinaN2Levantado();
+          defineNivel_Atual(2);
           //CHECAR NÍVEL 3
-          if (n3 && n2 && n1 && n0) {
-            Serial.println( "trueN3");
+          if (n3 && n2 && n1 && n0 ) {
+            Serial.println( "NIVEL-N3");
             rotinaN3Levantado();
+            defineNivel_Atual(3);
             desligaBomba();
           } else {
             rotinaN3Abaixado();
@@ -177,10 +180,10 @@ boolean temAgua() {
 
 void ligaBomba () {
   //aqui liga bomba
-  if (NIVEL_ATUAL >= NIVEL_MINIMO_PARA_ACIONAMENTO ) {
+  if (( Nivel_Atual <= Nivel_Minimo_Para_Acionamento )) {
     digitalWrite(pinRele, LOW);
     Serial.println("pRele LOW ON Pump: " );
-  } else {
+  } else if ( isCheio ) {
     digitalWrite(pinRele, HIGH);
     Serial.println("pRele HIGH N_MIN OFF Pump: " );
   }
@@ -235,6 +238,7 @@ boolean checaN0() {
 //
 void rotinaN0Abaixado() {
   //desliga o led vermelho
+  isCheio = false;
   digitalWrite(ledVermelho, HIGH);
   //por precaução , desliga o verde e o amarelo
   digitalWrite(ledAzul, HIGH);
@@ -245,6 +249,7 @@ void rotinaN0Abaixado() {
 
 void rotinaN0Levantado() {
   //liga o led vermelho
+  isCheio = false;
   digitalWrite(ledVermelho, LOW);
   //por precaução , desliga o verde e o amarelo
   digitalWrite(ledAzul, HIGH);
@@ -280,6 +285,7 @@ boolean checaN1() {
 void rotinaN1Abaixado() {
   //desliga o led vermelho
   //digitalWrite(ledVermelho, LOW);
+  isCheio = false;
   digitalWrite(ledAzul, HIGH);
   digitalWrite(ledVerde, HIGH);
   digitalWrite(ledAmarelo, HIGH);
@@ -289,6 +295,7 @@ void rotinaN1Abaixado() {
 void rotinaN1Levantado() {
   //liga o led vermelho
   //digitalWrite(ledVermelho, LOW);
+  isCheio = false;
   digitalWrite(ledAzul, LOW);
   digitalWrite(ledVerde, HIGH);
   digitalWrite(ledAmarelo, HIGH);
@@ -322,6 +329,7 @@ void rotinaN2Abaixado() {
   //desliga o led vermelho
   //digitalWrite(ledVermelho, LOW);
   //digitalWrite(ledAzul, HIGH);
+  isCheio = false;
   digitalWrite(ledVerde, HIGH);
   digitalWrite(ledAmarelo, HIGH);
 }
@@ -331,6 +339,7 @@ void rotinaN2Levantado() {
   //liga o led vermelho
   //digitalWrite(ledVermelho, LOW);
   //(ledAzul, LOW);
+  isCheio = false;
   digitalWrite(ledVerde, LOW);
   digitalWrite(ledAmarelo, HIGH);
 }
@@ -364,6 +373,7 @@ void rotinaN3Abaixado() {
   //digitalWrite(ledVermelho, LOW);
   //digitalWrite(ledAzul, HIGH);
   //digitalWrite(ledVerde, HIGH);
+  isCheio = false;
   digitalWrite(ledAmarelo, HIGH);
 }
 
@@ -373,6 +383,7 @@ void rotinaN3Levantado() {
   //digitalWrite(ledVermelho, LOW);
   //(ledAzul, LOW);
   //digitalWrite(ledVerde, LOW);
+  isCheio = true;
   digitalWrite(ledAmarelo, LOW);
 }
 
@@ -381,39 +392,11 @@ int NivelDeAcionamentoMinimo(int nivel) {
   return nivel;
 }
 
-
-int  checaNIVEL_ATUAL() {
-  int n;
-
-  Serial.println("***********CHECAGEM DE NIVEIS*************");
-  if (checaN0())
-  {
-    if (checaN1())
-    {
-      if (checaN2())
-      {
-        if (checaN3())
-        {
-          Serial.println("N_ATUAL: 3");
-          Serial.println();
-          return  n = 3;
-        }
-        Serial.println("N_ATUAL: 2");
-        Serial.println();
-        return n = 2;
-      }
-      Serial.println("N_ATUAL: 1");
-      Serial.println();
-      return n = 1;
-    }
-    Serial.println("N_ATUAL: 0");
-    Serial.println();
-    return n = 0;
-  } else {
-    Serial.println("N_ATUAL: 0");
-    Serial.println();
-    return n = 0;
-  }
-  Serial.println();
-
+int defineNivel_Atual( int nivel) {
+  Nivel_Atual = nivel;
 }
+
+/*
+  void cheio(boolean cheio) {
+  isCheio = cheio;
+  }*/
