@@ -52,7 +52,7 @@ void loop() {
   boolean n3 = checaN3();
 
   //CHECAR NÍVEL 0
-  if (contSeco ) {
+  if (contSeco && NIVEL_ATUAL >= NIVEL_MINIMO_PARA_ACIONAMENTO) {
     // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
     if (n0) {
       Serial.println( "trueN0");
@@ -74,18 +74,21 @@ void loop() {
           } else {
             rotinaN3Abaixado();
             ligaBomba();
+            Serial.println( "falseN3");
           }
 
           //desligaBomba();
         } else {
           rotinaN2Abaixado();
           ligaBomba();
+          Serial.println( "falseN2");
         }
 
         //desligaBomba();
       } else {
         rotinaN1Abaixado();
         ligaBomba();
+        Serial.println( "falseN1");
       }
       //desligaBomba();
     } else {
@@ -406,8 +409,11 @@ int  checaNIVEL_ATUAL() {
     Serial.println("N_ATUAL: 0");
     Serial.println();
     return n = 0;
+  } else {
+    Serial.println("N_ATUAL: 0");
+    Serial.println();
+    return n = 0;
   }
   Serial.println();
-
 
 }
