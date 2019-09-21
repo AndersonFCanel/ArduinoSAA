@@ -1,6 +1,3 @@
-/**/
-#include <SoftwareSerial.h>
-
 /*VARIAVEIS DOS LEDS*/
 #define ledVerde 13
 #define ledAmarelo 12
@@ -30,23 +27,11 @@ int pinosUsados[10] = {ledVerde, ledAmarelo, ledAzul, ledVermelho, nivel0, nivel
 int tipoPinos[10] = {OUTPUT, OUTPUT, OUTPUT, OUTPUT, INPUT, INPUT, INPUT, INPUT, OUTPUT, INPUT};
 
 
-/*CONFIGURAÇÃO WIFI*/
-SoftwareSerial esp8266 (2, 3); //Arduino TX (ESP8266 RX) connected to Arduino Pin 2, Arduino RX(ESP8266 TX) connected to Arduino Pin 3
-
-String ssid = "ALHN-8E28";
-String password = "4650730851";
-
-String path = "/api/arduino/oi";
-String server = "192.168.1.70";
-String request = "GET " + path + " HTTP/1.1\r\n" + "Host: " + server + "\r\n" + "Connection: keep-alive\r\n\r\n";
-String requestLength = String(request.length());
-
-const int timeout = 2000;
-
 void setup()
 {
+
   // Inicializa o Monitor Serial porta 9600
-    Serial.begin(9600);
+  Serial.begin(9600);
 
   //inicializa todos os pinModes
   for (int i = 0; i < sizeof(pinosUsados); i++) {
@@ -54,21 +39,10 @@ void setup()
   }
   desligaTudo();
   Nivel_Minimo_Para_Acionamento = NivelDeAcionamentoMinimo(1);
-
-  esp8266.begin(9600); // Should match ESP's current baudrate
- 
-  setupESP8266();
-  connectToWiFi();
-
-  startTCPConnection();  
-  sendGetRequest();
-  closeTCPConnection();
-  
 }
 
 void loop() {
 
-    //Toda a lógica de funcionamento deve ocorrer no interior desse if
   //Se circuito CS FECHADO então...(ÁGUA NO CANO)
 
   boolean  contSeco = temAgua();
@@ -77,9 +51,11 @@ void loop() {
   boolean n2 = checaN2();
   boolean n3 = checaN3();
 
-  //CHECAR NÍVEL 0
+
+  //Toda a lógica de funcionamento deve ocorrer no interior desse if
   if (contSeco ) {
     // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
+    //CHECAR NÍVEL 0
     if (n0 ) {
       Serial.println( "NIVEL-0");
       rotinaN0Levantado();
@@ -421,57 +397,6 @@ int NivelDeAcionamentoMinimo(int nivel) {
 int defineNivel_Atual( int nivel) {
   Nivel_Atual = nivel;
 }
-
-
-
-
-/*WIFI CONFIG*/
-String atCommand(String command, int timeout) {
-  String response = "";
-  esp8266.println(command);
-
-  long int time = millis();
-
-  while( (time+timeout) > millis() ) {
-    while(esp8266.available()) {
-      char c = esp8266.read();
-      response += c;
-    }
-  }
-
-  Serial.println(response);
-  return response;
-}
-
-void setupESP8266() {
-  atCommand("AT+RST", timeout);
-  atCommand("AT+CWMODE=1", timeout);
-}
-
-void connectToWiFi() {
-  String connect = "AT+CWJAP=\"" +ssid+"\",\"" + password + "\"";
-  atCommand(connect, 6000);
-  atCommand("AT+CIFSR", timeout);
-}
-
-void startTCPConnection() {
-  String connect = "AT+CIPSTART=\"TCP\",\"" + server + "\",8090";
-  atCommand(connect, timeout);
-}
-
-void closeTCPConnection() {
-  atCommand("AT+CIPCLOSE", timeout);
-}
-
-String sendGetRequest() {
-  atCommand("AT+CIPSEND=" + requestLength, timeout);
-  String response = atCommand(request, 6000);
-  return response;
-}
-
-
-
-
 
 /*
   void cheio(boolean cheio) {
