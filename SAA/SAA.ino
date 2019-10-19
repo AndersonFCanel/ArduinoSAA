@@ -65,14 +65,14 @@ void setup()
 
   //ESP8266 CONFIG
   esp8266.begin(9600); // Should match ESP's current baudrate
-  Serial.println(getMacAdress());
+  String MAC =  getMacAdress( );
   //setupESP8266();
   //connectToWiFi();
   wifisetup();  //wifi setup
   connectWifi();
-  //Abrindo conexão TCP
+  //brindo conexão TCP
   startTCPConnection();
-  sendPostRequest( "{\"logado\":\"logado\"}", "/api/arduino/deviceConect" );
+  sendPostRequest( "{\"MAC\":\""+MAC+"\"}", "/api/arduino/deviceConect" );
   closeTCPConnection();
 
 }
@@ -549,7 +549,7 @@ void wifisetup()
 
 //Metodo para abrir TCP
 void startTCPConnection() {
-  String connect = "AT+CIPSTART=\"TCP\",\"" + server + "\",8090";
+  String connect = "AT+CIPSTART=\"TCP\",\"" + server + "\","+port;
   atCommand(connect, timeout);
 }
 
@@ -560,9 +560,9 @@ void closeTCPConnection() {
 }
 
 
-//Metodo para fchar TCP
+//Metodo para pegar MAC
 String getMacAdress() {
-  atCommand("AT+CIPAPMAC?", timeout);
+  return atCommand("AT+CIPAPMAC?", timeout);
 }
 
 
