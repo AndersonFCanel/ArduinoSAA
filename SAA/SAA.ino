@@ -70,10 +70,9 @@ void setup()
   //connectToWiFi();
   wifisetup();  //wifi setup
   connectWifi();
-  //brindo conexão TCP
-  startTCPConnection();
-  sendPostRequest( "{\"MAC\":\""+MAC+"\"}", "/api/arduino/deviceConect" );
-  closeTCPConnection();
+  
+  sendPostRequest( "{\"MAC\":\""+MAC+"\"}", "/api/arduino/deviceConected" );
+
 
 }
 
@@ -463,6 +462,11 @@ String atCommand(String command, int timeout) {
 
 //Médodo para enviar rquisisão Post
 String sendPostRequest( String msg, String uri ) {
+
+
+//Abrindo conexão TCP
+  startTCPConnection();
+  
   //Post- EXEMPLO
   //String pathPost = "/api/arduino/oiPost"; //MODELO URI
   //String msg = "{\"o\":\"o\"}";//MODELO MSG
@@ -479,6 +483,10 @@ String sendPostRequest( String msg, String uri ) {
   atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
   String response = atCommand(requestPost, 6000);
   //Serial.println(response);
+
+  //fechando conexão TCP
+  closeTCPConnection();
+  
   return response;
 }
 
