@@ -203,10 +203,13 @@ void loop() {
 
               sendGetRequest(  "/api/arduino/nivelHora?nivel=3");
               desligaBomba();
+              sendGetRequest(  "/api/arduino/bomba?onOff=0");
+              sendGetRequest(  "/api/arduino/notificaCheio" );
 
             } else {
               rotinaN3Abaixado();
               ligaBomba();
+              sendGetRequest(  "/api/arduino/bomba?onOff=1");
               //Serial.println( "NIVEL-3-V");
             }
 
@@ -214,6 +217,7 @@ void loop() {
           } else {
             rotinaN2Abaixado();
             ligaBomba();
+            sendGetRequest(  "/api/arduino/bomba?onOff=1");
             //Serial.println( "NIVEL-2-V");
           }
 
@@ -221,12 +225,14 @@ void loop() {
         } else {
           rotinaN1Abaixado();
           ligaBomba();
+          sendGetRequest(  "/api/arduino/bomba?onOff=1");
           //Serial.println( "NIVEL-1-V");
         }
         //desligaBomba();
       } else {
         //Serial.println( "NIVEL-0-V");
         rotinaN0Abaixado();
+        sendGetRequest(  "/api/arduino/bomba?onOff=1");
         ligaBomba();
       }
     }
@@ -234,6 +240,7 @@ void loop() {
     //Se circuito CS ABERTO então...(SECO NO CANO)
     else {
       sendGetRequest(  "/api/arduino/contraSeco?agua=0");
+      
       // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
       if (n0) {
         //Serial.println( "NIVEL-0-S/A");
@@ -262,11 +269,13 @@ void loop() {
               //Serial.println( "NIVEL-3-S/A");
               rotinaN3Levantado();
               desligaBomba();
-              sendGetRequest(  "/api/arduino/nivelHora?nivel=2");
+              sendGetRequest(  "/api/arduino/nivelHora?nivel=3");
+              sendGetRequest(  "/api/arduino/notificaCheio" );
             } else {
               //Serial.println( "NIVEL-3-V-S/A");
               rotinaN3Abaixado();
               desligaBomba();
+              sendGetRequest(  "/api/arduino/bomba?onOff=0");
             }
 
             //desligaBomba();
@@ -274,6 +283,7 @@ void loop() {
             //Serial.println( "NIVEL-2-V-S/A");
             rotinaN2Abaixado();
             desligaBomba();
+            sendGetRequest(  "/api/arduino/bomba?onOff=0");
           }
 
           //desligaBomba();
@@ -281,17 +291,20 @@ void loop() {
           //Serial.println( "NIVEL-1-V-S/A");
           rotinaN1Abaixado();
           desligaBomba();
+          sendGetRequest(  "/api/arduino/bomba?onOff=0");
         }
         //desligaBomba();
       } else {
         //Serial.println( "NIVEL-0-V-S/A");
         rotinaN0Abaixado();
         desligaBomba();
+        sendGetRequest(  "/api/arduino/bomba?onOff=0");
       }
 
       //configurar um delay de 5 minutos
       delay(2000);
       desligaBomba();
+      sendGetRequest(  "/api/arduino/bomba?onOff=0");
     }
 
     // espera 1 segundo para o proximo loop
@@ -327,12 +340,12 @@ void ligaBomba () {
   if (( Nivel_Atual <= Nivel_Minimo_Para_Acionamento )) {
     digitalWrite(pinRele, LOW);
     //Serial.println("pRele LOW ON Pump: " );
-    sendGetRequest(  "/api/arduino/bomba?onOff=1");
+    //sendGetRequest(  "/api/arduino/bomba?onOff=1");
   } else if ( isCheio ) {
     digitalWrite(pinRele, HIGH);
     //Serial.println("pRele HIGH N_MIN OFF Pump: " );
-    sendGetRequest(  "/api/arduino/bomba?onOff=0");
-    sendGetRequest(  "/api/arduino/notificaCheio");
+    //sendGetRequest(  "/api/arduino/bomba?onOff=0");
+    //sendGetRequest(  "/api/arduino/notificaCheio");
   }
 }
 
@@ -340,7 +353,7 @@ void desligaBomba () {
   //aqui desliga a bomba
   digitalWrite(pinRele, HIGH);
   //Serial.println("pRele HIGH OFF Pump: " );
-  sendGetRequest(  "/api/arduino/bomba?onOff=0");
+  //sendGetRequest(  "/api/arduino/bomba?onOff=0");
 }
 
 
