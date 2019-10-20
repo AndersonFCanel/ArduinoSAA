@@ -108,7 +108,7 @@ void setup()
 
 
 void loop() {
-  sendGetRequest(  "/api/arduino/mac?mac=4f:22:36:99:18");
+  sendGetRequest(  "/api/arduino/mac?mac=de:4f:22:36:99:18");
   //Toda a lógica de funcionamento deve ocorrer no interior desse if
   //Se circuito CS FECHADO então...(ÁGUA NO CANO)
 
