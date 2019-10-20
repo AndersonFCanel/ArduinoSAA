@@ -35,20 +35,21 @@ int tipoPinos[10] = {OUTPUT, OUTPUT, OUTPUT, OUTPUT, INPUT, INPUT, INPUT, INPUT,
 /*CONFIGURAÇÃO WIFI*/
 SoftwareSerial esp8266(2, 3); //Arduino TX (ESP8266 RX) connected to Arduino Pin 2, Arduino RX(ESP8266 TX) connected to Arduino Pin 3
 
-String ssid = "Romero";
-String password = "35475442";
+//String ssid = "Romero";
+//String password = "35475442";
 
-//String ssid = "TheHell";
-//String password = "ahp15161522";
+String ssid = "TheHell";
+String password = "ahp15161522";
 
 //Ip do WebServer
-String server = "192.168.0.16";
+String server = "192.168.43.166";
 
 //Porta do Servidor
 String port  = "8090";
 
 const int timeout = 3000;
 
+String req = "-";
 void setup()
 {
   // Inicializa o Monitor Serial porta 9600
@@ -65,133 +66,163 @@ void setup()
 
   //ESP8266 CONFIG
   esp8266.begin(9600); // Should match ESP's current baudrate
-  String MAC =  getMacAdress( );
+  String MAC = "{\"MAC\":\"" + getMacAdress( ) + "\"}" ;
   //setupESP8266();
   //connectToWiFi();
   wifisetup();  //wifi setup
   connectWifi();
-  
-  sendPostRequest( "{\"MAC\":\""+MAC+"\"}", "/api/arduino/deviceConected" );
+
+  //String req = montaRequest("{\"MAC\":\"" + MAC + "\"}", "/api/arduino/deviceConected" );
+  //sendPostRequest( req );
+
+  req = String ("POST api/arduino/deviceConected HTTP/1.1\r\nHost: " + server + ":" + port + "\r\nAccept: *" + "/" + "*\r\nContent-Length: " + MAC.length() + "\r\nConnection: keep-alive\r\nContent-Type: application/json\r\n\r\n" + MAC + "\r\n");
 
 
+
+  Serial.println(req);
+  startTCPConnection();
+  String requestLengthPost = String(req.length());
+  atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
+  String response = atCommand(req, 5000);
+  closeTCPConnection();
+
+
+  delay(5000);
 }
 
 
 void loop() {
-  if (0) {
-    //Toda a lógica de funcionamento deve ocorrer no interior desse if
-    //Se circuito CS FECHADO então...(ÁGUA NO CANO)
 
-    boolean  contSeco = temAgua();
-    boolean n0 = checaN0();
-    boolean n1 = checaN1();
-    boolean n2 = checaN2();
-    boolean n3 = checaN3();
+  delay(3000);
+  //Toda a lógica de funcionamento deve ocorrer no interior desse if
+  //Se circuito CS FECHADO então...(ÁGUA NO CANO)
 
-    //CHECAR NÍVEL 0
-    if (contSeco ) {
-      // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
-      if (n0 ) {
-        Serial.println( "NIVEL-0");
-        rotinaN0Levantado();
-        defineNivel_Atual(0);
-        //CHECAR NÍVEL 1
-        if (n1 && n0 ) {
-          Serial.println( "NIVEL-1");
-          rotinaN1Levantado();
-          defineNivel_Atual(1);
-          //CHECAR NÍVEL 2
-          if (n2 && n1 && n0 ) {
-            Serial.println( "NIVEL-N2");
-            rotinaN2Levantado();
-            defineNivel_Atual(2);
-            //CHECAR NÍVEL 3
-            if (n3 && n2 && n1 && n0 ) {
-              Serial.println( "NIVEL-N3");
-              rotinaN3Levantado();
-              defineNivel_Atual(3);
-              desligaBomba();
-            } else {
-              rotinaN3Abaixado();
-              ligaBomba();
-              Serial.println( "falseN3");
-            }
 
-            //desligaBomba();
+  boolean  contSeco = temAgua();
+  boolean n0 = checaN0();
+  boolean n1 = checaN1();
+  boolean n2 = checaN2();
+  boolean n3 = checaN3();
+
+  //if(0){ //CHECAR NÍVEL 0
+  if (contSeco ) {
+    // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
+    sendGetRequest(  "/api/arduino/contraSeco?agua=1");
+    delay(6000);
+    if (n0) {
+      Serial.println( "NIVEL-0");
+      rotinaN0Levantado();
+      defineNivel_Atual(0);
+      if (!n3 && !n2 && !n1) {
+        sendGetRequest(  "/api/arduino/nivelHora?nivel=0");
+      }
+      //CHECAR NÍVEL 1
+      if (n1 && n0 ) {
+        Serial.println( "NIVEL-1");
+        rotinaN1Levantado();
+        defineNivel_Atual(1);
+        if (!n3 && !n2) {
+          sendGetRequest(  "/api/arduino/nivelHora?nivel=1");
+        }
+        //CHECAR NÍVEL 2
+        if (n2 && n1 && n0 ) {
+          Serial.println( "NIVEL-N2");
+          rotinaN2Levantado();
+          defineNivel_Atual(2);
+
+          if (!n3) {
+            sendGetRequest(  "/api/arduino/nivelHora?nivel=2");
+          }
+          delay(5000);
+          //CHECAR NÍVEL 3
+          if (n3 && n2 && n1 && n0 ) {
+            Serial.println( "NIVEL-N3");
+            rotinaN3Levantado();
+            defineNivel_Atual(3);
+            sendGetRequest(  "/api/arduino/nivelHora?nivel=3");
+            delay(5000);
+            desligaBomba();
           } else {
-            rotinaN2Abaixado();
+            rotinaN3Abaixado();
             ligaBomba();
-            Serial.println( "falseN2");
+            Serial.println( "falseN3");
           }
 
           //desligaBomba();
         } else {
-          rotinaN1Abaixado();
+          rotinaN2Abaixado();
           ligaBomba();
-          Serial.println( "falseN1");
+          Serial.println( "falseN2");
         }
+
         //desligaBomba();
       } else {
-        Serial.println( "falseN0");
-        rotinaN0Abaixado();
+        rotinaN1Abaixado();
         ligaBomba();
+        Serial.println( "falseN1");
       }
+      //desligaBomba();
+    } else {
+      Serial.println( "falseN0");
+      rotinaN0Abaixado();
+      ligaBomba();
     }
+  }
 
-    //Se circuito CS ABERTO então...(SECO NO CANO)
-    else {
-      // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
-      if (n0) {
-        Serial.println( "trueN0");
-        rotinaN0Levantado();
-
-        //CHECAR NÍVEL 1
-        if (n1) {
-          Serial.println( "trueN1");
-          rotinaN1Levantado();
-          //CHECAR NÍVEL 2
-          if (n2) {
-            Serial.println( "trueN2");
-            rotinaN2Levantado();
-            //CHECAR NÍVEL 3
-            if (n3) {
-              Serial.println( "trueN3");
-              rotinaN3Levantado();
-              desligaBomba();
-            } else {
-              rotinaN3Abaixado();
-              desligaBomba();
-            }
-
-            //desligaBomba();
+  //Se circuito CS ABERTO então...(SECO NO CANO)
+  else {
+    sendGetRequest(  "/api/arduino/contraSeco?agua=0");
+    // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
+    if (n0) {
+      Serial.println( "trueN0");
+      rotinaN0Levantado();
+      //CHECAR NÍVEL 1
+      if (n1) {
+        Serial.println( "trueN1");
+        rotinaN1Levantado();
+        //CHECAR NÍVEL 2
+        if (n2) {
+          Serial.println( "trueN2");
+          rotinaN2Levantado();
+          //CHECAR NÍVEL 3
+          if (n3) {
+            Serial.println( "trueN3");
+            rotinaN3Levantado();
+            desligaBomba();
           } else {
-            rotinaN2Abaixado();
+            rotinaN3Abaixado();
             desligaBomba();
           }
 
           //desligaBomba();
         } else {
-          rotinaN1Abaixado();
+          rotinaN2Abaixado();
           desligaBomba();
         }
+
         //desligaBomba();
       } else {
-        Serial.println( "falseN0");
-        rotinaN0Abaixado();
+        rotinaN1Abaixado();
         desligaBomba();
       }
-
-      //configurar um delay de 5 minutos
-      delay(4000);
+      //desligaBomba();
+    } else {
+      Serial.println( "falseN0");
+      rotinaN0Abaixado();
       desligaBomba();
     }
 
-    // espera 1 segundo para o proximo loop
-    delay(1000);
-    Serial.println();
-    Serial.println();
-
+    //configurar um delay de 5 minutos
+    delay(4000);
+    desligaBomba();
   }
+
+  // espera 1 segundo para o proximo loop
+  delay(1000);
+  Serial.println();
+  Serial.println();
+  //}
+
 }
 
 //Checa contra seco
@@ -221,22 +252,19 @@ void ligaBomba () {
   if (( Nivel_Atual <= Nivel_Minimo_Para_Acionamento )) {
     digitalWrite(pinRele, LOW);
     Serial.println("pRele LOW ON Pump: " );
+    sendGetRequest(  "/api/arduino/bomba?onOff=1");
   } else if ( isCheio ) {
     digitalWrite(pinRele, HIGH);
     Serial.println("pRele HIGH N_MIN OFF Pump: " );
+    sendGetRequest(  "/api/arduino/bomba?onOff=0");
   }
-  //***********************************
-  //Avisa WS que LIGOU bomba
-  //***********************************
 }
 
 void desligaBomba () {
   //aqui desliga a bomba
   digitalWrite(pinRele, HIGH);
   Serial.println("pRele HIGH OFF Pump: " );
-  //***********************************
-  //Avisa WS que DESLIGOU bomba
-  //***********************************
+  sendGetRequest(  "/api/arduino/bomba?onOff=0");
 }
 
 
@@ -459,34 +487,25 @@ String atCommand(String command, int timeout) {
 }
 
 
-
 //Médodo para enviar rquisisão Post
-String sendPostRequest( String msg, String uri ) {
+String sendPostRequest( String requestPost ) {
 
+  Serial.println(requestPost);
 
-//Abrindo conexão TCP
+  //Abrindo conexão TCP
   startTCPConnection();
-  
   //Post- EXEMPLO
   //String pathPost = "/api/arduino/oiPost"; //MODELO URI
   //String msg = "{\"o\":\"o\"}";//MODELO MSG
 
-  String requestPost =     "POST " + uri + " HTTP/1.1\r\n"
-                           + "Host: " + server + ":" + port + "\r\n"
-                           + "Accept: *" + "/" + "*\r\n"
-                           + "Content-Length: " + msg.length() + "\r\n"
-                           + "Connection: keep-alive\r\n"
-                           + "Content-Type: application/json\r\n\r\n"
-                           + msg + "\r\n";
-
   String requestLengthPost = String(requestPost.length());
   atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
-  String response = atCommand(requestPost, 6000);
+  String response = atCommand(requestPost, 3000);
   //Serial.println(response);
 
   //fechando conexão TCP
   closeTCPConnection();
-  
+
   return response;
 }
 
@@ -498,6 +517,8 @@ String sendGetRequest(  String uri )
   //String path = "/api/arduino/oi?oi=123";
   //String path = "/api/arduino/oi";
 
+  //Abrindo conexão TCP
+  startTCPConnection();
   String requestGet = "GET " + uri + " HTTP/1.1\r\n"
                       + "Host: " + server + "\r\n"
                       + "Connection: keep-alive\r\n\r\n";
@@ -506,6 +527,9 @@ String sendGetRequest(  String uri )
 
   atCommand("AT+CIPSEND=" + requestLengthGet, timeout);
   String response = atCommand(requestGet, 6000);
+
+  //Fechando conexão TCP
+  closeTCPConnection();
   //Serial.println(response);
   return response;
 }
@@ -557,7 +581,7 @@ void wifisetup()
 
 //Metodo para abrir TCP
 void startTCPConnection() {
-  String connect = "AT+CIPSTART=\"TCP\",\"" + server + "\","+port;
+  String connect = "AT+CIPSTART=\"TCP\",\"" + server + "\"," + port;
   atCommand(connect, timeout);
 }
 
