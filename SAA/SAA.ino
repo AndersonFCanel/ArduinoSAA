@@ -103,22 +103,22 @@ void loop() {
     req += String("Content-Type: application/json\r\n\r\n");
     req += String( mac + "\r\n");
    
-      Serial.println(req);
-      startTCPConnection();
-      String requestLengthPost = String(req.length());
-      atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
-      String response = atCommand(req, 5000);
-      closeTCPConnection();
+ //    Serial.println(req);
+ //     startTCPConnection();
+ //     String requestLengthPost = String(req.length());
+ //     atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
+ //     String response = atCommand(req, 5000);
+ //     closeTCPConnection();
     
 
-    delay(5000);
+  //  delay(5000);
 
 
     sendGetRequest(  "/api/arduino/mac?mac=de:4f:22:36:99:18");
 
   }
 
-
+sendGetRequest(  "/api/arduino/comandos");
 
   //Toda a lógica de funcionamento deve ocorrer no interior desse if
   //Se circuito CS FECHADO então...(ÁGUA NO CANO)
