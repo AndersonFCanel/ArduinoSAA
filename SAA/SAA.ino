@@ -35,21 +35,26 @@ int tipoPinos[10] = {OUTPUT, OUTPUT, OUTPUT, OUTPUT, INPUT, INPUT, INPUT, INPUT,
 /*CONFIGURAÇÃO WIFI*/
 SoftwareSerial esp8266(2, 3); //Arduino TX (ESP8266 RX) connected to Arduino Pin 2, Arduino RX(ESP8266 TX) connected to Arduino Pin 3
 
-//String ssid = "Romero";
-//String password = "35475442";
+String ssid = "Romero";
+String password = "35475442";
 
-String ssid = "TheHell";
-String password = "ahp15161522";
+//String ssid = "TheHell";
+//String password = "ahp15161522";
 
 //Ip do WebServer
-String server = "192.168.43.166";
+String server = "192.168.0.16";
 
 //Porta do Servidor
 String port  = "8090";
 
-const int timeout = 3000;
+const int timeout = 1000;
 
-String req = "-";
+boolean n0 ;
+boolean n1 ;
+boolean n2 ;
+boolean n3 ;
+
+
 void setup()
 {
   // Inicializa o Monitor Serial porta 9600
@@ -66,7 +71,10 @@ void setup()
 
   //ESP8266 CONFIG
   esp8266.begin(9600); // Should match ESP's current baudrate
-  String MAC = "{\"MAC\":\"" + getMacAdress( ) + "\"}" ;
+  //String mac = getMacAdress( ) ;
+  String mac = "{\"MAC\":\"de:4f:22:36:99:18\"}";
+
+
   //setupESP8266();
   //connectToWiFi();
   wifisetup();  //wifi setup
@@ -75,34 +83,40 @@ void setup()
   //String req = montaRequest("{\"MAC\":\"" + MAC + "\"}", "/api/arduino/deviceConected" );
   //sendPostRequest( req );
 
-  req = String ("POST api/arduino/deviceConected HTTP/1.1\r\nHost: " + server + ":" + port + "\r\nAccept: *" + "/" + "*\r\nContent-Length: " + MAC.length() + "\r\nConnection: keep-alive\r\nContent-Type: application/json\r\n\r\n" + MAC + "\r\n");
+
+  String req = "";
+  req += String("POST api/arduino/deviceConected HTTP/1.1\r\n");
+  req += String("Host: " + String(server) + ':' + String(port) + "\r\n");
+  req += String("Accept: */*\r\n" );
+  req += String("Content-Length: " + String(mac.length()) + "\r\n");
+  req += String("Connection: keep-alive\r\n");
+  req += String("Content-Type: application/json\r\n\r\n");
+  req += String( mac + "\r\n");
+  /*
+    Serial.println(req);
+    startTCPConnection();
+    String requestLengthPost = String(req.length());
+    atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
+    String response = atCommand(req, 5000);
+    closeTCPConnection();
+  */
+
+  //delay(8000);
 
 
-
-  Serial.println(req);
-  startTCPConnection();
-  String requestLengthPost = String(req.length());
-  atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
-  String response = atCommand(req, 5000);
-  closeTCPConnection();
-
-
-  delay(5000);
 }
 
 
 void loop() {
-
-  delay(3000);
+  sendGetRequest(  "/api/arduino/mac?mac=4f:22:36:99:18");
   //Toda a lógica de funcionamento deve ocorrer no interior desse if
   //Se circuito CS FECHADO então...(ÁGUA NO CANO)
 
-
   boolean  contSeco = temAgua();
-  boolean n0 = checaN0();
-  boolean n1 = checaN1();
-  boolean n2 = checaN2();
-  boolean n3 = checaN3();
+  n0 = checaN0();
+  n1 = checaN1();
+  n2 = checaN2();
+  n3 = checaN3();
 
   //if(0){ //CHECAR NÍVEL 0
   if (contSeco ) {
@@ -121,7 +135,7 @@ void loop() {
         Serial.println( "NIVEL-1");
         rotinaN1Levantado();
         defineNivel_Atual(1);
-        if (!n3 && !n2) {
+        if (!n3 && !n2 ) {
           sendGetRequest(  "/api/arduino/nivelHora?nivel=1");
         }
         //CHECAR NÍVEL 2
@@ -129,19 +143,18 @@ void loop() {
           Serial.println( "NIVEL-N2");
           rotinaN2Levantado();
           defineNivel_Atual(2);
-
           if (!n3) {
             sendGetRequest(  "/api/arduino/nivelHora?nivel=2");
           }
-          delay(5000);
           //CHECAR NÍVEL 3
           if (n3 && n2 && n1 && n0 ) {
             Serial.println( "NIVEL-N3");
             rotinaN3Levantado();
             defineNivel_Atual(3);
+
             sendGetRequest(  "/api/arduino/nivelHora?nivel=3");
-            delay(5000);
             desligaBomba();
+
           } else {
             rotinaN3Abaixado();
             ligaBomba();
@@ -293,9 +306,9 @@ boolean checaN0() {
     //Boia Levantada
   } else if (digitalRead(nivel0) == HIGH) {
     Serial.println("N-0 HIGH Boia L: " );
-    //***********************************
-    //Envia hora e estado nivel 0 para WS
-    //***********************************
+    /*if (!n3 && !n2 && !n1) {
+      sendGetRequest(  "/api/arduino/nivelHora?nivel=0");
+      }*/
     return true;
   }
 
@@ -339,9 +352,9 @@ boolean checaN1() {
     //Boia Levantada
   } else if (digitalRead(nivel1) == HIGH) {
     Serial.println("N-1 HIGH Boia L: " );
-    //***********************************
-    //Envia hora e estado nivel 1 para WS
-    //***********************************
+    /*if (!n3 && !n2) {
+      sendGetRequest(  "/api/arduino/nivelHora?nivel=1");
+      }*/
     return true;
   }
 
@@ -384,9 +397,9 @@ boolean checaN2() {
     //Boia Levantada
   } else if (digitalRead(nivel2) == HIGH) {
     Serial.println("N-2 HIGH Boia L: " );
-    //***********************************
-    //Envia hora e estado nivel 2 para WS
-    //***********************************
+    /*if (!n3 ) {
+      sendGetRequest(  "/api/arduino/nivelHora?nivel=2");
+      }*/
     return true;
   }
 
@@ -427,9 +440,7 @@ boolean checaN3() {
     //Boia Levantada
   } else if (digitalRead(nivel3) == HIGH) {
     Serial.println("N-3 HIGH Boia L: " );
-    //***********************************
-    //Envia hora e estado nivel 3 para WS
-    //***********************************
+    //sendGetRequest(  "/api/arduino/nivelHora?nivel=3");
     return true;
   }
 
@@ -487,26 +498,18 @@ String atCommand(String command, int timeout) {
 }
 
 
-//Médodo para enviar rquisisão Post
-String sendPostRequest( String requestPost ) {
-
-  Serial.println(requestPost);
-
+String sendPostRequest( String request, String requestLength ) {
   //Abrindo conexão TCP
   startTCPConnection();
-  //Post- EXEMPLO
-  //String pathPost = "/api/arduino/oiPost"; //MODELO URI
-  //String msg = "{\"o\":\"o\"}";//MODELO MSG
-
-  String requestLengthPost = String(requestPost.length());
-  atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
-  String response = atCommand(requestPost, 3000);
+  atCommand("AT+CIPSEND=" + requestLength, timeout);
+  String response = atCommand(request, 3000);
   //Serial.println(response);
 
+  Serial.println(response);
   //fechando conexão TCP
   closeTCPConnection();
-
   return response;
+
 }
 
 
@@ -526,7 +529,7 @@ String sendGetRequest(  String uri )
   String requestLengthGet = String(requestGet.length());
 
   atCommand("AT+CIPSEND=" + requestLengthGet, timeout);
-  String response = atCommand(requestGet, 6000);
+  String response = atCommand(requestGet, 3000);
 
   //Fechando conexão TCP
   closeTCPConnection();
@@ -573,7 +576,7 @@ void esp_buad_rate_change()
 void wifisetup()
 {
   esp8266.println("AT");
-  esp8266.println("AT+CWMODE=3");//Comando AT :  3: SoftAP+Station mode
+  esp8266.println("AT+CWMODE=1");//Comando AT :  3: SoftAP+Station mode
   Serial.println("Wifi ready");
 }
 
@@ -607,9 +610,4 @@ String getMacAdress() {
   String connect = "AT+CWJAP=\"" +ssid+"\",\"" + password + "\"";
   atCommand(connect, 6000);
   atCommand("AT+CIFSR", timeout);
-  }*/
-
-/*
-  void cheio(boolean cheio) {
-  isCheio = cheio;
   }*/
