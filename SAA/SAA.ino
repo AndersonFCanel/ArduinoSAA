@@ -77,7 +77,7 @@ void setup()
   //connectToWiFi();
   wifisetup();  //wifi setup
   connectWifi();
-    sendGetRequest( "/api/arduino/mac?mac=de:4f:22:36:99:18");
+  sendGetRequest( "/api/arduino/mac?mac=de:4f:22:36:99:18");
 }
 
 
@@ -102,23 +102,23 @@ void loop() {
     req += String("Connection: keep-alive\r\n");
     req += String("Content-Type: application/json\r\n\r\n");
     req += String( mac + "\r\n");
-   
- //    Serial.println(req);
- //     startTCPConnection();
- //     String requestLengthPost = String(req.length());
- //     atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
- //     String response = atCommand(req, 5000);
- //     closeTCPConnection();
-    
 
-  //  delay(5000);
+    //    Serial.println(req);
+    //     startTCPConnection();
+    //     String requestLengthPost = String(req.length());
+    //     atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
+    //     String response = atCommand(req, 5000);
+    //     closeTCPConnection();
 
 
-    sendGetRequest(  "/api/arduino/mac?mac=de:4f:22:36:99:18");
+    //  delay(5000);
 
+
+    String response= sendGetRequest(  "/api/arduino/mac?mac=de:4f:22:36:99:18");
+     Serial.println(response);
   }
 
-sendGetRequest(  "/api/arduino/comandos");
+  sendGetRequest(  "/api/arduino/comandos");
 
   //Toda a lógica de funcionamento deve ocorrer no interior desse if
   //Se circuito CS FECHADO então...(ÁGUA NO CANO)
@@ -130,7 +130,7 @@ sendGetRequest(  "/api/arduino/comandos");
   n3 = checaN3();
 
   //if(0){ //CHECAR NÍVEL 0
-  if (contSeco ){
+  if (contSeco ) {
     // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
     sendGetRequest(  "/api/arduino/contraSeco?agua=1");
     //delay(6000);
@@ -200,19 +200,31 @@ sendGetRequest(  "/api/arduino/comandos");
     if (n0) {
       Serial.println( "trueN0");
       rotinaN0Levantado();
+      if (!n3 && !n2 && !n1) {
+        sendGetRequest(  "/api/arduino/nivelHora?nivel=0");
+      }
       //CHECAR NÍVEL 1
       if (n1) {
         Serial.println( "trueN1");
         rotinaN1Levantado();
+        if (!n3 && !n2 ) {
+          sendGetRequest(  "/api/arduino/nivelHora?nivel=1");
+        }
+
         //CHECAR NÍVEL 2
         if (n2) {
           Serial.println( "trueN2");
           rotinaN2Levantado();
+          if (!n3 ) {
+            sendGetRequest(  "/api/arduino/nivelHora?nivel=2");
+          }
+
           //CHECAR NÍVEL 3
           if (n3) {
             Serial.println( "trueN3");
             rotinaN3Levantado();
             desligaBomba();
+            sendGetRequest(  "/api/arduino/nivelHora?nivel=2");
           } else {
             rotinaN3Abaixado();
             desligaBomba();
@@ -265,7 +277,7 @@ boolean temAgua() {
     //***********************************
     //Avisa WS que ESTÁ SECO
     //***********************************
-  //sendGetRequest(  "/api/arduino/contraSeco?agua=0");
+    //sendGetRequest(  "/api/arduino/contraSeco?agua=0");
     Serial.println("CS EST LOW S/Agua: " );
     return false;
   }
@@ -514,7 +526,7 @@ String sendPostRequest( String request, String requestLength ) {
   //Abrindo conexão TCP
   startTCPConnection();
   atCommand("AT+CIPSEND=" + requestLength, timeout);
-  String response = atCommand(request, 3000);
+  String response = atCommand(request, 1000);
   //Serial.println(response);
 
   Serial.println(response);
@@ -541,7 +553,7 @@ String sendGetRequest(  String uri )
   String requestLengthGet = String(requestGet.length());
 
   atCommand("AT+CIPSEND=" + requestLengthGet, timeout);
-  String response = atCommand(requestGet, 3000);
+  String response = atCommand(requestGet, 1000);
 
   //Fechando conexão TCP
   closeTCPConnection();
