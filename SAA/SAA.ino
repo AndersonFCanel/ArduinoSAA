@@ -54,6 +54,8 @@ boolean n1 ;
 boolean n2 ;
 boolean n3 ;
 
+int contaLoop = 0;
+
 
 void setup()
 {
@@ -71,44 +73,53 @@ void setup()
 
   //ESP8266 CONFIG
   esp8266.begin(9600); // Should match ESP's current baudrate
-  //String mac = getMacAdress( ) ;
-  String mac = "{\"MAC\":\"de:4f:22:36:99:18\"}";
-
-
   //setupESP8266();
   //connectToWiFi();
   wifisetup();  //wifi setup
   connectWifi();
-
-  //String req = montaRequest("{\"MAC\":\"" + MAC + "\"}", "/api/arduino/deviceConected" );
-  //sendPostRequest( req );
-
-
-  String req = "";
-  req += String("POST api/arduino/deviceConected HTTP/1.1\r\n");
-  req += String("Host: " + String(server) + ':' + String(port) + "\r\n");
-  req += String("Accept: */*\r\n" );
-  req += String("Content-Length: " + String(mac.length()) + "\r\n");
-  req += String("Connection: keep-alive\r\n");
-  req += String("Content-Type: application/json\r\n\r\n");
-  req += String( mac + "\r\n");
-  /*
-    Serial.println(req);
-    startTCPConnection();
-    String requestLengthPost = String(req.length());
-    atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
-    String response = atCommand(req, 5000);
-    closeTCPConnection();
-  */
-
-  //delay(8000);
-
-
+    sendGetRequest( "/api/arduino/mac?mac=de:4f:22:36:99:18");
 }
 
 
 void loop() {
-  sendGetRequest(  "/api/arduino/mac?mac=de:4f:22:36:99:18");
+
+  if (contaLoop == 0 ) {
+    //String mac = getMacAdress( ) ;
+    String mac = "{\"MAC\":\"de:4f:22:36:99:18\"}";
+
+
+
+
+    //String req = montaRequest("{\"MAC\":\"" + MAC + "\"}", "/api/arduino/deviceConected" );
+    //sendPostRequest( req );
+
+
+    String req = "";
+    req += String("POST api/arduino/deviceConected HTTP/1.1\r\n");
+    req += String("Host: " + String(server) + ':' + String(port) + "\r\n");
+    req += String("Accept: */*\r\n" );
+    req += String("Content-Length: " + String(mac.length()) + "\r\n");
+    req += String("Connection: keep-alive\r\n");
+    req += String("Content-Type: application/json\r\n\r\n");
+    req += String( mac + "\r\n");
+   
+      Serial.println(req);
+      startTCPConnection();
+      String requestLengthPost = String(req.length());
+      atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
+      String response = atCommand(req, 5000);
+      closeTCPConnection();
+    
+
+    delay(5000);
+
+
+    sendGetRequest(  "/api/arduino/mac?mac=de:4f:22:36:99:18");
+
+  }
+
+
+
   //Toda a lógica de funcionamento deve ocorrer no interior desse if
   //Se circuito CS FECHADO então...(ÁGUA NO CANO)
 
@@ -119,10 +130,10 @@ void loop() {
   n3 = checaN3();
 
   //if(0){ //CHECAR NÍVEL 0
-  if (contSeco ) {
+  if (contSeco ){
     // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
     sendGetRequest(  "/api/arduino/contraSeco?agua=1");
-    delay(6000);
+    //delay(6000);
     if (n0) {
       Serial.println( "NIVEL-0");
       rotinaN0Levantado();
@@ -247,17 +258,18 @@ boolean temAgua() {
     //*****************************************
     //Avisa WS que Tem água na tubulação
     //****************************************
+    //sendGetRequest(  "/api/arduino/contraSeco?agua=1");
     Serial.println("CS EST HIGH C/Agua: " );
     return true;
   } else if (digitalRead( pinContraSeco ) == LOW) {
     //***********************************
     //Avisa WS que ESTÁ SECO
     //***********************************
-
+  //sendGetRequest(  "/api/arduino/contraSeco?agua=0");
     Serial.println("CS EST LOW S/Agua: " );
     return false;
   }
-
+  contaLoop ++;
 }
 
 void ligaBomba () {
