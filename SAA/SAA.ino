@@ -26,6 +26,7 @@ int Nivel_Atual = 0;
 int NIVEL_MAXIMO = 3;
 boolean bomba_on_off;
 boolean custom = false;
+boolean falha = false;
 
 boolean isCheio = false;
 
@@ -82,28 +83,6 @@ void setup()
 
 }
 
-void recebeComandosServer() {
-  String uri = "/api/arduino/comandos";
-
-  startTCPConnection();
-  String requestGet = "GET " + uri + " HTTP/1.1\r\n"
-                      + "Host: " + server + "\r\n"
-                      + "Connection: keep-alive\r\n\r\n";
-
-  String requestLengthGet = String(requestGet.length());
-
-  atCommand("AT+CIPSEND=" + requestLengthGet, timeout);
-  String response = atCommand(requestGet, 6000);
-  Serial.println("RESPOSTA ==>> COMANDOS" + response);
-
-  //Fechando conexão TCP
-  closeTCPConnection();
-
-  Nivel_Minimo_Para_Acionamento;
-  bomba_on_off;
-  custom = true;
-}
-
 void loop() {
 
   if (contaLoop == 3 ) {
@@ -111,36 +90,10 @@ void loop() {
   }
 
   if (contaLoop == 0 ) {
-    //String mac = getMacAdress( ) ;
-    //String mac = "{\"MAC\":\"de:4f:22:36:99:18\"}";
-    //String uri = "api/arduino/deviceConected";
+    sendGetRequest(  "/api/arduino/mac?mac=de:4f:22:36:99:18");
+    sendGetRequestPrint( "/api/arduino/comandos");
 
-    //String requestPost = "POST " + uri + " HTTP/1.1\r\n"
-    //                   + "Host: " + server + ":8090\r\n"
-    //                 + "Accept: */*\r\n"
-    //               + "Content-Length: " + mac.length() + "\r\n"
-    //             + "Connection: keep-alive\r\n\r\n"
-    //           + "Connection: keep-alive\r\n"
-    //         + "Content-Type: application/json\r\n\r\n"
-    //       + mac + "\r\n";
-
-
-
-    //Serial.println(requestPost);
-    //startTCPConnection();
-    //String requestLengthPost = String( requestPost.length());
-    //atCommand("AT+CIPSEND=" + requestLengthPost, timeout);
-    //String response = atCommand( requestPost, 5000);
-    //closeTCPConnection();
-
-
-    //delay(5000);
-
-
-   sendGetRequest(  "/api/arduino/mac?mac=de:4f:22:36:99:18");
-  sendGetRequestPrint( "/api/arduino/comandos");
-   
-delay(10000);
+    delay(10000);
   }
 
   //Toda a lógica de funcionamento deve ocorrer no interior desse if
@@ -152,10 +105,11 @@ delay(10000);
   n2 = checaN2();
   n3 = checaN3();
 
-  if (1) { //CHECAR NÍVEL 0
-    if (contSeco ) {
-      // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
-      sendGetRequest(  "/api/arduino/contraSeco?agua=1");
+  //CHECAR NÍVEL 0
+  if (contSeco ) {
+    // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
+    sendGetRequest(  "/api/arduino/contraSeco?agua=1");
+    if (!falha) {
       if (n0) {
         //Serial.println( "NIVEL-0");
         rotinaN0Levantado();
@@ -224,7 +178,7 @@ delay(10000);
     //Se circuito CS ABERTO então...(SECO NO CANO)
     else {
       sendGetRequest(  "/api/arduino/contraSeco?agua=0");
-      
+
       // se o circuito de nivel0 estiver FECHADO (BOIA 0 LEVANTADA)
       if (n0) {
         //Serial.println( "NIVEL-0-S/A");
@@ -292,11 +246,128 @@ delay(10000);
     }
 
     // espera 1 segundo para o proximo loop
+    Serial.println("**FIM LOOP**");
     delay(1000);
-    //Serial.println();
+
   }
-contaLoop++;
+
+
+  //BEGIN-ALARME
+  /*
+    if (!n0) {
+    if ( n1 || n2 || n3) {
+      if ( n1 ) {
+        sendGetRequest( "/api/arduino/alarme?tipo=N0_A-N1_L");
+        falha = true;
+      } else if ( n2  ) {
+        sendGetRequest( "/api/arduino/alarme?tipo=N0_A-N2_L");
+        falha = true;
+      } else if ( n3 ) {
+        sendGetRequest( "/api/arduino/alarme?tipo=N0_A-N3_L");
+        desligaBomba();
+        falha = true;
+      } else {
+        falha = false;
+      }
+
+    }
+    } else {
+    falha = false;
+    }
+
+
+    if (!n1) {
+    if ( n2 || n3) {
+      if ( n2  ) {
+        sendGetRequest( "/api/arduino/alarme?tipo=N1_A-N2_L");
+        falha = true;
+      } else if ( n3 ) {
+        sendGetRequest( "/api/arduino/alarme?tipo=N1_A-N3_L");
+        desligaBomba();
+        falha = true;
+      } else {
+        falha = false;
+      }
+    }
+    } else {
+
+    falha = false;
+    }
+
+
+    if (!n2) {
+    if ( n3 ) {
+      sendGetRequest( "/api/arduino/alarme?tipo=N2_A-N3_L");
+      desligaBomba();
+      falha = true;
+    }
+    } else {
+    falha = false;
+    delay(1000);
+    }*/
+  //END-ALARME
+
+  //checaFalha();
+  contaLoop++;
 }
+
+void checaFalha() {
+  delay(1000);
+  //BEGIN-ALARME
+    if (!n0) {
+    if ( n1 || n2 || n3) {
+      if ( n1 ) {
+        sendGetRequest( "/api/arduino/alarme?tipo=N0_A-N1_L");
+        falha = true;
+      } else if ( n2  ) {
+        sendGetRequest( "/api/arduino/alarme?tipo=N0_A-N2_L");
+        falha = true;
+      } else if ( n3 ) {
+        sendGetRequest( "/api/arduino/alarme?tipo=N0_A-N3_L");
+        desligaBomba();
+        falha = true;
+      } else {
+        falha = false;
+      }
+
+    }
+    } else {
+    falha = false;
+    }
+
+
+    if (!n1) {
+    if ( n2 || n3) {
+      if ( n2  ) {
+        sendGetRequest( "/api/arduino/alarme?tipo=N1_A-N2_L");
+        falha = true;
+      } else if ( n3 ) {
+        sendGetRequest( "/api/arduino/alarme?tipo=N1_A-N3_L");
+        desligaBomba();
+        falha = true;
+      } else {
+        falha = false;
+      }
+    }
+    } else {
+
+    falha = false;
+    }
+
+
+    if (!n2) {
+    if ( n3 ) {
+      sendGetRequest( "/api/arduino/alarme?tipo=N2_A-N3_L");
+      desligaBomba();
+      falha = true;
+    }
+    } else {
+    falha = false;
+    delay(1000);
+    }
+    //END-ALARME
+}
+
 
 //Checa contra seco
 boolean temAgua() {
@@ -321,7 +392,7 @@ boolean temAgua() {
 
 void ligaBomba () {
   //aqui liga bomba
-  if (( Nivel_Atual <= Nivel_Minimo_Para_Acionamento )) {
+  if (( Nivel_Atual <= Nivel_Minimo_Para_Acionamento ) && !falha) {
     digitalWrite(pinRele, LOW);
     //Serial.println("pRele LOW ON Pump: " );
     //sendGetRequest(  "/api/arduino/bomba?onOff=1");
@@ -637,8 +708,6 @@ void wifisetup()
   esp8266.println("AT+CWMODE=1");//Comando AT :  3: SoftAP+Station mode
   Serial.println("Wifi ready");
 }
-
-
 
 //Metodo para abrir TCP
 void startTCPConnection() {
