@@ -137,27 +137,11 @@ void loop() {
     //delay(5000);
 
 
-    sendGetRequest(  "/api/arduino/mac?mac=de:4f:22:36:99:18");
-
-    String uri = "/api/arduino/comandos";
-
-  startTCPConnection();
-  String requestGet = "GET " + uri + " HTTP/1.1\r\n"
-                      + "Host: " + server + "\r\n"
-                      + "Connection: keep-alive\r\n\r\n";
-
-  String requestLengthGet = String(requestGet.length());
-
-  atCommand("AT+CIPSEND=" + requestLengthGet, timeout);
-  String response = atCommand(requestGet, 6000);
-  Serial.println("RESPOSTA ==>> COMANDOS" + response);
-
-  //Fechando conexão TCP
-  closeTCPConnection();
-
+   sendGetRequest(  "/api/arduino/mac?mac=de:4f:22:36:99:18");
+  sendGetRequestPrint( "/api/arduino/comandos");
+   
+delay(10000);
   }
-
-  //delay(10000);
 
   //Toda a lógica de funcionamento deve ocorrer no interior desse if
   //Se circuito CS FECHADO então...(ÁGUA NO CANO)
@@ -584,6 +568,30 @@ String sendGetRequest(  String uri )
   //Fechando conexão TCP
   closeTCPConnection();
   //Serial.println(response);
+  return response;
+}
+
+
+String sendGetRequestPrint(  String uri )
+{
+  //GET - EXEMPLO
+  //String path = "/api/arduino/oi?oi=123";
+  //String path = "/api/arduino/oi";
+
+  //Abrindo conexão TCP
+  startTCPConnection();
+  String requestGet = "GET " + uri + " HTTP/1.1\r\n"
+                      + "Host: " + server + "\r\n"
+                      + "Connection: keep-alive\r\n\r\n";
+
+  String requestLengthGet = String(requestGet.length());
+
+  atCommand("AT+CIPSEND=" + requestLengthGet, timeout);
+  String response = atCommand(requestGet, 500);
+
+  //Fechando conexão TCP
+  closeTCPConnection();
+  Serial.println(response);
   return response;
 }
 
